@@ -2322,7 +2322,7 @@ function renderCardView() {
     `;
 }
 
-        let html5QrCode = null;
+                let html5QrCode = null;
 
         window.openQrScannerModal = function() {
             const modal = document.getElementById('qr-scanner-modal');
@@ -2335,12 +2335,9 @@ function renderCardView() {
                         { facingMode: "environment" }, 
                         { fps: 10, qrbox: { width: 220, height: 220 } },
                         async (decodedText) => {
-                            // Successful scan! decodedText contains the account number encoded in the QR code
                             await handleScannedAccountNumber(decodedText.trim());
                         },
-                        (errorMessage) => {
-                            // Scanning frame errors can be ignored safely
-                        }
+                        (errorMessage) => {}
                     ).catch(err => {
                         alert("Unable to access camera. Please check camera permissions.");
                         closeQrScannerModal();
@@ -2402,19 +2399,15 @@ function renderCardView() {
             }
         };
 
-                                                                        window.openSmartSuppChat = function() {
+        window.openSmartSuppChat = function() {
             window.location.href = 'support.html';
         };
 
         let transactionListener = null;
 
-                let transactionListener = null;
-
         function listenForIncomingTransactions(userId) {
-            // Unsubscribe from any previous listener if it exists
             if (transactionListener) transactionListener();
 
-            // Listen in real-time for any new transaction where recipientUid matches current user
             transactionListener = db.collection('transactions')
                 .where('recipientUid', '==', userId)
                 .orderBy('timestamp', 'desc')
@@ -2423,12 +2416,9 @@ function renderCardView() {
                     snapshot.docChanges().forEach((change) => {
                         if (change.type === 'added') {
                             const txData = change.doc.data();
-                            
-                            // Ensure we don't trigger alerts for transactions that belonged to a previous login session
                             const txTime = txData.timestamp?.toMillis() || 0;
                             const now = Date.now();
                             
-                            // Expanded window to 60 seconds to account for login switching delays
                             if (now - txTime < 60000) { 
                                 const symbol = txData.symbol || '$';
                                 const sender = txData.senderName || 'A Heritage User';
@@ -2445,13 +2435,9 @@ function renderCardView() {
                 });
         }
 
-
-        // Request Notification Permission & Show Local Push Notification
-                function requestNotificationPermissionAndNotify(title, body) {
-            // 1. Always show your sleek in-app iOS banner first so it's instantly visible
+        function requestNotificationPermissionAndNotify(title, body) {
             showInAppBanner(title, body);
 
-            // 2. Also trigger the real browser/system push notification if permitted
             if ('Notification' in window) {
                 if (Notification.permission === 'granted') {
                     showLocalPush(title, body);
@@ -2478,25 +2464,18 @@ function renderCardView() {
             }
         }
 
-
-        // iOS-Style In-App Notification Banner matching your phone layout
         function showInAppBanner(title, body) {
-            // Remove any existing banner
             const existingBanner = document.getElementById('ios-push-banner');
             if (existingBanner) existingBanner.remove();
 
-            // Create notification element matching iOS style
             const banner = document.createElement('div');
             banner.id = 'ios-push-banner';
             banner.className = 'fixed top-4 left-4 right-4 max-w-md mx-auto bg-[#1e293b]/95 backdrop-blur-xl text-white p-3.5 rounded-2xl shadow-2xl border border-white/10 z-50 flex items-start space-x-3 transition-all duration-300 translate-y-[-30px] opacity-0';
             
             banner.innerHTML = `
-                <!-- App Icon / Logo matching iOS style -->
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center shrink-0 shadow-md overflow-hidden border border-white/20">
                     <i class="fa-solid fa-building-columns text-base"></i>
                 </div>
-                
-                <!-- Content Area -->
                 <div class="flex-1 pr-1">
                     <div class="flex justify-between items-center">
                         <h4 class="font-semibold text-xs text-gray-300 tracking-wide">${title}</h4>
@@ -2504,19 +2483,15 @@ function renderCardView() {
                     </div>
                     <p class="text-xs text-white font-medium mt-0.5 leading-snug">${body}</p>
                 </div>
-                
-                <!-- Close Button -->
                 <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white text-xs font-bold px-1 self-center">✕</button>
             `;
 
             document.body.appendChild(banner);
 
-            // Smooth slide-down animation
             setTimeout(() => {
                 banner.classList.remove('translate-y-[-30px]', 'opacity-0');
             }, 10);
 
-            // Auto-dismiss after 5 seconds
             setTimeout(() => {
                 if (banner.parentElement) {
                     banner.classList.add('translate-y-[-30px]', 'opacity-0');
@@ -2525,7 +2500,6 @@ function renderCardView() {
             }, 5000);
         }
 
-        // Register Service Worker for PWA Push Notifications
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
