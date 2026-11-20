@@ -2405,35 +2405,42 @@ function renderCardView() {
 
         let transactionListener = null;
 
-        function listenForIncomingTransactions(userId) {
+                function listenForIncomingTransactions(userId) {
             if (transactionListener) transactionListener();
 
+            // Listen to all transactions for this user without strict server-side sorting that requires indexes
             transactionListener = db.collection('transactions')
                 .where('recipientUid', '==', userId)
-                .orderBy('timestamp', 'desc')
-                .limit(1)
                 .onSnapshot(async (snapshot) => {
                     snapshot.docChanges().forEach(async (change) => {
+                        // Only trigger when a brand new transaction document is added
                         if (change.type === 'added') {
                             const txData = change.doc.data();
-                            const txTime = txData.timestamp?.toMillis() || 0;
+                            const txTime = txData.timestamp?.toMillis() || Date.now();
                             const now = Date.now();
                             
-                            if (now - txTime < 60000) { 
+                            // Check if transaction happened within the last 60 seconds
+                            if (now - txTime < 60000) {
                                 const symbol = txData.symbol || '$';
                                 const sender = txData.senderName || 'A Heritage User';
                                 
                                 try {
+                                    // 1. Fetch updated user balance from Firestore
                                     const userDoc = await db.collection('users').doc(userId).get();
                                     if (userDoc.exists) {
                                         userAccountDetails = userDoc.data();
                                     }
+                                    
+                                    // 2. Refresh local transaction list array
                                     await fetchUserTransactions(userId, userAccountDetails.accountNumber);
+                                    
+                                    // 3. Redraw UI so balance & activity update live instantly
                                     render();
                                 } catch (err) {
-                                    console.error("Error updating live balance:", err);
+                                    console.error("Live update error:", err);
                                 }
 
+                                // 4. Trigger the push notification banner & alert
                                 requestNotificationPermissionAndNotify(
                                     "Heritage Bank: Money Received 💰",
                                     `You received ${symbol}${Number(txData.amount).toLocaleString()} from ${sender}.`
@@ -2445,6 +2452,7 @@ function renderCardView() {
                     console.error("Transaction listener error:", error);
                 });
         }
+
 
         function requestNotificationPermissionAndNotify(title, body) {
             showInAppBanner(title, body);
