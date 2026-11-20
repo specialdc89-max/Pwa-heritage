@@ -1145,7 +1145,7 @@
             `;
         }
 
-                window.handleExecuteWithdrawal = async function() {
+                        window.handleExecuteWithdrawal = async function() {
             const pinVal = document.getElementById('withdraw-pin-val').value.trim();
             if (pinVal.length < 4) {
                 alert('Please enter a valid 4-digit PIN.');
@@ -1215,7 +1215,7 @@
                 await db.collection('transactions').add(withdrawalPayload);
                 userTransactions.unshift(withdrawalPayload);
 
-                // Trigger push notification once withdrawal is successfully submitted
+                // ---> ADD THIS BLOCK TO TRIGGER THE NOTIFICATION <---
                 requestNotificationPermissionAndNotify(
                     "Heritage Bank: Withdrawal Pending ⏳", 
                     `Your withdrawal of ${symbol}${Number(withdrawData.amount).toLocaleString()} via ${withdrawData.method} has been submitted.`
@@ -1230,7 +1230,6 @@
                 render();
             }
         };
-
 
         function renderWithdrawMessageView() {
             const symbol = userAccountDetails.symbol || '$';
@@ -2409,6 +2408,8 @@ function renderCardView() {
 
         let transactionListener = null;
 
+                let transactionListener = null;
+
         function listenForIncomingTransactions(userId) {
             // Unsubscribe from any previous listener if it exists
             if (transactionListener) transactionListener();
@@ -2423,10 +2424,12 @@ function renderCardView() {
                         if (change.type === 'added') {
                             const txData = change.doc.data();
                             
-                            // Prevent triggering notification for old transactions on initial load
+                            // Ensure we don't trigger alerts for transactions that belonged to a previous login session
                             const txTime = txData.timestamp?.toMillis() || 0;
                             const now = Date.now();
-                            if (now - txTime < 10000) { // Within the last 10 seconds
+                            
+                            // Expanded window to 60 seconds to account for login switching delays
+                            if (now - txTime < 60000) { 
                                 const symbol = txData.symbol || '$';
                                 const sender = txData.senderName || 'A Heritage User';
                                 
