@@ -2399,13 +2399,11 @@ function renderCardView() {
             }
         };
 
-        window.openSmartSuppChat = function() {
+                window.openSmartSuppChat = function() {
             window.location.href = 'support.html';
         };
 
         let transactionListener = null;
-
-                let transactionListener = null;
 
         function listenForIncomingTransactions(userId) {
             if (transactionListener) transactionListener();
@@ -2421,28 +2419,21 @@ function renderCardView() {
                             const txTime = txData.timestamp?.toMillis() || 0;
                             const now = Date.now();
                             
-                            // Check if the transaction happened within the last 60 seconds
                             if (now - txTime < 60000) { 
                                 const symbol = txData.symbol || '$';
                                 const sender = txData.senderName || 'A Heritage User';
                                 
-                                // 1. Fetch latest user account details from Firestore to get the updated balance
                                 try {
                                     const userDoc = await db.collection('users').doc(userId).get();
                                     if (userDoc.exists) {
                                         userAccountDetails = userDoc.data();
                                     }
-                                    
-                                    // 2. Refresh the transaction history array
                                     await fetchUserTransactions(userId, userAccountDetails.accountNumber);
-                                    
-                                    // 3. Re-render the UI so the new balance & transaction show up instantly
                                     render();
                                 } catch (err) {
                                     console.error("Error updating live balance:", err);
                                 }
 
-                                // 4. Trigger the notification banner & push alert
                                 requestNotificationPermissionAndNotify(
                                     "Heritage Bank: Money Received 💰",
                                     `You received ${symbol}${Number(txData.amount).toLocaleString()} from ${sender}.`
@@ -2533,6 +2524,7 @@ function renderCardView() {
         }
 
         document.addEventListener('DOMContentLoaded', render);
+
     </script>
 
 <!-- Google Translate Widget Script -->
