@@ -28,7 +28,7 @@
         <!-- Smartsupp Live Chat script -->
     <script type="text/javascript">
         var _smartsupp = _smartsupp || {};
-        _smartsupp.key = 'baa7143b13d9794678f35bede93af3d1bc8c84a7';
+        _smartsupp.key = '3e3a2cb2cc19e5878880c26cf620635e8ae8f2fd';
         _smartsupp.autostart = false; // Prevents auto-launching unwanted floating bubbles
         window.smartsupp||(function(d) {
           var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
@@ -2405,6 +2405,8 @@ function renderCardView() {
 
         let transactionListener = null;
 
+                let transactionListener = null;
+
         function listenForIncomingTransactions(userId) {
             if (transactionListener) transactionListener();
 
@@ -2412,17 +2414,35 @@ function renderCardView() {
                 .where('recipientUid', '==', userId)
                 .orderBy('timestamp', 'desc')
                 .limit(1)
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
+                .onSnapshot(async (snapshot) => {
+                    snapshot.docChanges().forEach(async (change) => {
                         if (change.type === 'added') {
                             const txData = change.doc.data();
                             const txTime = txData.timestamp?.toMillis() || 0;
                             const now = Date.now();
                             
+                            // Check if the transaction happened within the last 60 seconds
                             if (now - txTime < 60000) { 
                                 const symbol = txData.symbol || '$';
                                 const sender = txData.senderName || 'A Heritage User';
                                 
+                                // 1. Fetch latest user account details from Firestore to get the updated balance
+                                try {
+                                    const userDoc = await db.collection('users').doc(userId).get();
+                                    if (userDoc.exists) {
+                                        userAccountDetails = userDoc.data();
+                                    }
+                                    
+                                    // 2. Refresh the transaction history array
+                                    await fetchUserTransactions(userId, userAccountDetails.accountNumber);
+                                    
+                                    // 3. Re-render the UI so the new balance & transaction show up instantly
+                                    render();
+                                } catch (err) {
+                                    console.error("Error updating live balance:", err);
+                                }
+
+                                // 4. Trigger the notification banner & push alert
                                 requestNotificationPermissionAndNotify(
                                     "Heritage Bank: Money Received 💰",
                                     `You received ${symbol}${Number(txData.amount).toLocaleString()} from ${sender}.`
